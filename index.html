@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sticker Maker Pro — Final Offline Edition</title>
+
+<style>
+:root {
+  --bg1: #f9fdfc;
+  --bg2: #e6f8f1;
+  --card: #ffffff;
+  --accent: #2c8f74;
+  --accent2: #3fb38e;
+  --muted: #555;
+  --border: #dfe7e3;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Global */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  color: #111;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Container */
+.container {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff, #f5faf8);
+  box-shadow: var(--shadow);
+}
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.subtitle {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Layout */
+.app {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 20px;
+  align-items: flex-start;
+}
+
+/* Left & Right Cards */
+.left,
+.right {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.left {
+  flex: 0 0 560px;
+  min-width: 320px;
+}
+.right {
+  flex: 1;
+  min-width: 300px;
+  max-height: 95vh;
+  overflow-y: auto;
+}
+
+/* Headings & Inputs */
+label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: #fff;
+}
+
+/* Buttons */
+button {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(44, 143, 116, 0.2);
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(44, 143, 116, 0.25);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Canvas Area */
+.canvas-wrap {
+  background: linear-gradient(180deg, rgba(44,143,116,0.05), rgba(44,143,116,0.02));
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 14px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+canvas {
+  display: block;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid #e0e8e4;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  background: #fff;
+}
+
+/* Buttons Row */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.action-buttons button {
+  min-width: 120px;
+}
+.note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Elements List */
+.elements {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  margin-top: 8px;
+  background: #fafdfa;
+}
+.element-item {
+  padding: 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9fefc);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #edf3ef;
+}
+
+/* Footer */
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .app { flex-direction: column; }
+  .left, .right { flex: 1 1 100%; }
+}
+@media (max-width: 480px) {
+  .title { font-size: 17px; }
+  button { padding: 8px 12px; font-size: 13px; }
+}
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">Sticker Maker Pro — Final Offline</div>
+        <div class="subtitle">سرخی (Heading): <strong style="direction:ltr">Sticker Maker Pro</strong> — اردو عنوان نیچے دکھے گا</div>
+      </div>
+      <div class="small">Offline • 50 JS animations • Text & Image • Export PNG / GIF / MP4(WebM)</div>
+    </div>
+
+    <div class="app">
+      <div class="left">
+        <label style="font-size:15px;font-weight:700">سرخی — Heading (in Urdu)</label>
+        <div class="small">یہ heading آپ تبدیل کر سکتے ہیں</div>
+        <input id="urHeading" type="text" value="ابو بکر صدیق — اسلامی و موٹیویشنل اسٹیکرز" style="margin-top:8px">
+
+        <!-- Canvas Size Controls -->
+        <div class="canvas-size-row">
+          <label style="margin:0">Canvas Size:</label>
+          <select id="canvasSizeSel" title="Choose a preset canvas size">
+            <option value="512x512">WhatsApp Sticker — 512×512</option>
+            <option value="1080x1080">Instagram Post — 1080×1080</option>
+            <option value="1080x1920">Instagram Story / TikTok — 1080×1920</option>
+            <option value="1280x720">YouTube Thumbnail — 1280×720</option>
+            <option value="1200x628">Facebook Post — 1200×628</option>
+            <option value="1920x1080">Full HD — 1920×1080</option>
+            <option value="custom">Custom (enter below)</option>
+          </select>
+
+          <div class="custom-box" id="customCanvasBox" style="display:none">
+            <input id="customWidth" type="number" value="512" min="1" style="width:100px" placeholder="W px">
+            <span style="font-weight:700">×</span>
+            <input id="customHeight" type="number" value="512" min="1" style="width:100px" placeholder="H px">
+            <button id="applySize">Apply</button>
+          </div>
+        </div>
+
+        <!-- Canvas container -->
+        <div class="canvas-wrap" role="region" aria-label="Canvas area">
+          <canvas id="canvas" width="512" height="512" style="aspect-ratio:1/1"></canvas>
+        </div>
+
+        <div style="text-align:center;margin-top:10px">
+          <button id="playBtn">Play</button>
+          <button id="pauseBtn" class="btn-ghost">Pause</button>
+          <button id="exportPng" style="min-width:120px">Export PNG</button>
+          <button id="exportGif" class="btn-ghost">Export GIF</button>
+          <button id="exportMp4" style="min-width:120px">Export MP4 (WebM)</button>
+        </div>
+        <div class="small" style="text-align:center;margin-top:8px">
+          Note: MP4 export creates a WebM video (widely supported). Converting to MP4 requires ffmpeg-wasm (large).
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="controls">
+          <label>Canvas Background</label>
+          <div class="row">
+            <input type="file" id="bgInput" accept="image/*">
+            <button id="bgClear" class="btn-ghost">Transparent</button>
+          </div>
+
+          <hr style="margin:10px 0">
+
+          <label>Add Text</label>
+          <input id="textValue" type="text" placeholder="Write Urdu or English text">
+          <div class="row">
+            <select id="fontList">
+              <option value="">System Default</option>
+              <option value="Noto Nastaliq Urdu">Noto Nastaliq Urdu</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Arial">Arial</option>
+            </select>
+            <input id="fontSize" type="number" value="34" style="width:96px">
+          </div>
+
+          <div class="row">
+            <input id="fontColor" type="color" value="#0b4a3b" style="width:56px">
+            <select id="align" style="width:120px">
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+            <select id="boldSel" style="width:90px">
+              <option value="normal">Normal</option>
+              <option value="bold">Bold</option>
+            </select>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <button id="addTextBtn">Add Text</button>
+            <button id="addImageBtn" class="btn-ghost">Upload Image / Signature</button>
+            <input type="file" id="imgInput" accept="image/*" style="display:none">
+          </div>
+
+          <hr style="margin:12px 0">
+
+          <label>Elements</label>
+          <div id="elements" class="elements"></div>
+
+          <div id="props" class="props" style="display:none">
+            <label>Selected Element Properties</label>
+            <div class="row"><div class="small">Type:</div><div id="propType"></div></div>
+            <input id="propText" type="text" style="margin-top:8px">
+            <div class="row" style="margin-top:8px">
+              <select id="propFont"></select>
+              <input id="propSize" type="number" style="width:90px">
+            </div>
+            <div class="row" style="margin-top:8px">
+              <input id="propColor" type="color" style="width:56px">
+              <select id="propAlign" style="width:120px">
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+                <option value="left">Left</option>
+              </select>
+              <select id="propBold" style="width:90px"><option value="normal">Normal</option><option value="bold">Bold</option></select>
+            </div>
+
+            <div style="margin-top:8px">
+              <label>JS Animation (choose one of 50)</label>
+              <select id="jsAnim" style="width:100%"></select>
+              <div class="small" style="margin-top:6px">Duration (ms) <input id="jsDur" type="number" value="1400" style="width:120px"></div>
+            </div>
+
+            <div style="margin-top:8px" class="row">
+              <button id="applyProps">Apply</button>
+              <button id="delEl" class="btn-ghost">Delete</button>
+              <button id="bringFront" class="btn-ghost">Bring Front</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Interface: English UI — Urdu headings. Exports: PNG, GIF, MP4(WebM). Offline ready.</div>
+  </div>
+
+  <!-- PART 2: JavaScript (animations, resize, export) will go here -->
+
+<script src="gif.min.js"></script>
+<script>
+// ===============================
+// Sticker Maker Pro — FINAL JS
+// ===============================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', {alpha:true});
+let bgImg = null;
+let elements = [];
+let selected = null;
+let playing = false;
+let animStart = 0;
+let canvasLogical = {w:canvas.width, h:canvas.height};
+
+// unique ID
+const uid = ()=> 'e_'+Math.random().toString(36).slice(2,9);
+
+// --------------------
+// Canvas Size Controls
+// --------------------
+const sizeSel = document.getElementById('canvasSizeSel');
+const customBox = document.getElementById('customCanvasBox');
+const customWidth = document.getElementById('customWidth');
+const customHeight = document.getElementById('customHeight');
+document.getElementById('applySize').addEventListener('click', ()=>{
+  setCanvasSize(parseInt(customWidth.value)||512, parseInt(customHeight.value)||512);
+});
+sizeSel.addEventListener('change', ()=>{
+  const val = sizeSel.value;
+  if(val==='custom'){ customBox.style.display='flex'; return; }
+  customBox.style.display='none';
+  const [w,h] = val.split('x').map(Number);
+  setCanvasSize(w,h);
+});
+
+// proportional resize
+function setCanvasSize(newW,newH){
+  if(!newW||!newH)return;
+  const oldW = canvasLogical.w, oldH = canvasLogical.h;
+  const sx = newW/oldW, sy = newH/oldH, avg=(sx+sy)/2;
+  elements.forEach(el=>{
+    if(typeof el.x==='number') el.x=Math.round(el.x*sx);
+    if(typeof el.y==='number') el.y=Math.round(el.y*sy);
+    if(el.type==='text'&&typeof el.size==='number') el.size=Math.max(8,Math.round(el.size*avg));
+    if(el.type==='image'&&typeof el.scale==='number') el.scale=Math.max(0.01,el.scale*avg);
+  });
+  canvas.width=newW; canvas.height=newH;
+  canvasLogical={w:newW,h:newH};
+  canvas.style.aspectRatio=`${newW}/${newH}`;
+  canvas.style.width='100%'; canvas.style.height='auto';
+  customWidth.value=newW; customHeight.value=newH;
+  refreshList();
+}
+
+// --------------------
+// Animation setup
+// --------------------
+const jsAnimSelect=document.getElementById('jsAnim');
+const jsAnims=[
+'none','move_full_sweep','rotate_full_around','elliptical_orbit','pendulum','bounce_physics','flip3d','spin_ease','shake_x','shake_y',
+'wave_text','typewriter','pop_in_out','swoosh_diag','zoom_bounce','squash_stretch','random_jitter','card_flip','glide_to_corner','ripple',
+'spiral_in','spiral_out','zoom_rotate','zigzag','pulse_fast','pulse_slow','float_up','float_down','rotate_x','rotate_y',
+'tilt_left','tilt_right','orbit_random','strobe_scale','scale_x_pulse','scale_y_pulse','bounce_small','overshoot','elastic_entry','fall_in',
+'roll_over','flip_spin','slide_from_left','slide_from_right','slide_from_top','slide_from_bottom','reverse_sweep','follow_path','breath','blur_in'
+];
+jsAnims.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;jsAnimSelect.appendChild(o);});
+
+// --------------------
+// Draw Loop
+// --------------------
+function drawFrame(now){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(bgImg){
+    const iw=bgImg.width,ih=bgImg.height;
+    const scale=Math.max(canvas.width/iw,canvas.height/ih);
+    ctx.drawImage(bgImg,(canvas.width-iw*scale)/2,(canvas.height-ih*scale)/2,iw*scale,ih*scale);
+  }
+  const t=playing?(now-animStart):0;
+  elements.forEach(el=>{
+    ctx.save();
+    const x=el.x||canvas.width/2,y=el.y||canvas.height/2;
+    let tx=0,ty=0,rot=0,sx=1,sy=1,alpha=1,blur=0;
+    if(el.jsAnim&&el.jsAnim!=='none'&&playing){
+      const p=computeProgress(t,el.jsDur||1400,el.loop===0?0:1,el.delay||0);
+      const r=runJsAnim(el,p,canvas,t);
+      Object.assign({tx,ty,rot,sx,sy,alpha,blur},r);
+      tx=r.tx||0;ty=r.ty||0;rot=r.rot||0;sx=r.sx||1;sy=r.sy||1;alpha=r.alpha||1;blur=r.blur||0;
+    }
+    ctx.globalAlpha=alpha;
+    if(blur) ctx.filter=`blur(${blur}px)`;
+    ctx.translate(x+tx,y+ty);
+    ctx.rotate(rot);
+    ctx.scale(sx,sy);
+    if(el.type==='image'&&el.img){
+      const iw=el.img.width,ih=el.img.height;
+      const scale=Math.min(canvas.width*0.85/iw,canvas.height*0.85/ih,el.scale||1);
+      ctx.drawImage(el.img,-(iw*scale)/2,-(ih*scale)/2,iw*scale,ih*scale);
+    } else if(el.type==='text'){
+      const weight=el.bold?'bold':'normal';
+      ctx.font=`${weight} ${el.size||34}px "${el.font||'Noto Nastaliq Urdu'}"`;
+      ctx.fillStyle=el.color||'#0b4a3b';
+      ctx.textAlign=el.align||'center';
+      ctx.textBaseline='middle';
+      drawWrapped(ctx,el.text||'',0,0,el.size||34,canvas.width*0.85);
+    }
+    ctx.restore();
+    ctx.filter='none';
+  });
+  requestAnimationFrame(drawFrame);
+}
+requestAnimationFrame(drawFrame);
+
+function computeProgress(t,dur,loop,delay){
+  if(t<(delay||0))return 0;
+  const local=t-(delay||0);
+  if(!dur)return 1;
+  if(loop===0)return Math.min(1,local/dur);
+  return (local%dur)/dur;
+}
+function runJsAnim(el,p,canvas,tNow){
+  const n=el.jsAnim||'none';const r={tx:0,ty:0,rot:0,sx:1,sy:1,alpha:1,blur:0};
+  switch(n){
+    case'move_full_sweep':r.tx=(-canvas.width/2-120)+(canvas.width+240)*p;break;
+    case'rotate_full_around':r.rot=p*Math.PI*2;break;
+    case'bounce_physics':r.ty=-Math.abs(Math.sin(p*Math.PI*2))*120;break;
+    case'pop_in_out':r.sx=r.sy=0.3+1.1*p;r.alpha=p;break;
+    case'breath':r.sx=r.sy=0.95+0.05*Math.sin(p*2*Math.PI);break;
+    default:break;
+  }return r;
+}
+function drawWrapped(ctx,text,x,y,size,maxW){
+  const words=text.split(/\s+/);let lines=[],cur='';
+  for(const w of words){const test=cur?cur+' '+w:w;const width=ctx.measureText(test).width;if(width>maxW&&cur){lines.push(cur);cur=w;}else cur=test;}
+  if(cur)lines.push(cur);
+  const lineH=size*1.05,total=lines.length*lineH;let startY=-total/2+lineH/2;
+  for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],x,startY+i*lineH);
+}
+
+// --------------------
+// UI Actions
+// --------------------
+document.getElementById('bgInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();const r=new FileReader();
+  r.onload=ev=>{img.onload=()=>bgImg=img;img.src=ev.target.result;};
+  r.readAsDataURL(f);
+});
+document.getElementById('bgClear').onclick=()=>bgImg=null;
+document.getElementById('addTextBtn').onclick=()=>{
+  const txt=document.getElementById('textValue').value.trim();if(!txt)return alert('Enter text');
+  const el={id:uid(),type:'text',text:txt,font:document.getElementById('fontList').value||'',size:parseInt(document.getElementById('fontSize').value||34),
+    color:document.getElementById('fontColor').value||'#0b4a3b',bold:document.getElementById('boldSel').value==='bold',
+    align:document.getElementById('align').value||'center',x:canvas.width/2,y:canvas.height/2,scale:1,jsAnim:'none',jsDur:1400,delay:0,loop:1};
+  elements.push(el);refreshList();document.getElementById('textValue').value='';
+};
+document.getElementById('addImageBtn').onclick=()=>document.getElementById('imgInput').click();
+document.getElementById('imgInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();const r=new FileReader();
+  r.onload=ev=>{img.onload=()=>{elements.push({id:uid(),type:'image',img:img,x:canvas.width/2,y:canvas.height/2,scale:1,jsAnim:'none',jsDur:1400,delay:0,loop:1});refreshList();};img.src=ev.target.result;};
+  r.readAsDataURL(f);
+});
+
+// element list + properties
+function refreshList(){
+  const c=document.getElementById('elements');c.innerHTML='';
+  elements.forEach(el=>{
+    const d=document.createElement('div');d.className='element-item';
+    d.innerHTML=`<div><strong>${el.type==='text'?'Text':'Image'}</strong><div class="small">${el.type==='text'?el.text.slice(0,60):'image'}</div></div>`;
+    const btn=document.createElement('button');btn.textContent='Edit';btn.onclick=()=>selectEl(el.id);
+    d.appendChild(btn);c.appendChild(d);
+  });
+}
+function selectEl(id){
+  selected=elements.find(x=>x.id===id);if(!selected)return;
+  document.getElementById('props').style.display='block';
+  document.getElementById('propType').textContent=selected.type;
+  document.getElementById('propText').value=selected.text||'';
+  populateFontProp();
+  document.getElementById('propSize').value=selected.size||34;
+  document.getElementById('propColor').value=selected.color||'#0b4a3b';
+  document.getElementById('propAlign').value=selected.align||'center';
+  document.getElementById('propBold').value=selected.bold?'bold':'normal';
+  document.getElementById('jsAnim').value=selected.jsAnim||'none';
+  document.getElementById('jsDur').value=selected.jsDur||1400;
+}
+function populateFontProp(){
+  const sel=document.getElementById('propFont');sel.innerHTML='';
+  const main=document.getElementById('fontList');
+  for(let i=0;i<main.options.length;i++){
+    const o=document.createElement('option');o.value=main.options[i].value;o.textContent=main.options[i].textContent;sel.appendChild(o);
+  }
+  if(selected) sel.value=selected.font||'';
+}
+document.getElementById('applyProps').onclick=()=>{
+  if(!selected)return;
+  selected.text=document.getElementById('propText').value;
+  selected.font=document.getElementById('propFont').value||'';
+  selected.size=parseInt(document.getElementById('propSize').value||34);
+  selected.color=document.getElementById('propColor').value||'#0b4a3b';
+  selected.align=document.getElementById('propAlign').value||'center';
+  selected.bold=document.getElementById('propBold').value==='bold';
+  selected.jsAnim=document.getElementById('jsAnim').value||'none';
+  selected.jsDur=parseInt(document.getElementById('jsDur').value||1400);
+  refreshList();
+};
+document.getElementById('delEl').onclick=()=>{if(!selected)return;elements=elements.filter(e=>e.id!==selected.id);selected=null;document.getElementById('props').style.display='none';refreshList();};
+document.getElementById('bringFront').onclick=()=>{if(!selected)return;elements=elements.filter(e=>e.id!==selected.id);elements.push(selected);refreshList();};
+
+// dragging
+let drag=null,offset={x:0,y:0};
+canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  for(let i=elements.length-1;i>=0;i--){
+    const el=elements[i];
+    if(el.type==='text'){
+      ctx.font=`${el.bold?'bold ':''}${el.size||34}px "${el.font||'Noto Nastaliq Urdu'}"`;
+      const w=Math.min(ctx.measureText(el.text||'').width+20,canvas.width*0.9);
+      const h=(el.size||34)*1.2;
+      const ex=el.x-w/2,ey=el.y-h/2;
+      if(mx>=ex&&mx<=ex+w&&my>=ey&&my<=ey+h){drag=el;offset.x=mx-ex;offset.y=my-ey;selectEl(el.id);return;}
+    }
+  }
+});
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  const rect=canvas.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  drag.x=mx;drag.y=my; // simplified
+});
+window.addEventListener('mouseup',()=>drag=null);
+
+// play/pause
+document.getElementById('playBtn').onclick=()=>{playing=true;animStart=performance.now();};
+document.getElementById('pauseBtn').onclick=()=>playing=false;
+
+// PNG export
+document.getElementById('exportPng').onclick=()=>{
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width;tmp.height=canvas.height;
+  const tctx=tmp.getContext('2d',{alpha:true});
+  if(bgImg){
+    const iw=bgImg.width,ih=bgImg.height,scale=Math.max(tmp.width/iw,tmp.height/ih);
+    tctx.drawImage(bgImg,(tmp.width-iw*scale)/2,(tmp.height-ih*scale)/2,iw*scale,ih*scale);
+  }
+  elements.forEach(el=>{
+    tctx.save();tctx.translate(el.x||tmp.width/2,el.y||tmp.height/2);
+    if(el.type==='image'&&el.img){
+      const iw=el.img.width,ih=el.img.height;
+      const scale=Math.min(tmp.width*0.85/iw,tmp.height*0.85/ih,el.scale||1);
+      tctx.drawImage(el.img,-(iw*scale)/2,-(ih*scale)/2,iw*scale,ih*scale);
+    }else if(el.type==='text'){
+      const w=el.bold?'bold':'normal';
+      tctx.font=`${w} ${el.size||34}px "${el.font||'Noto Nastaliq Urdu'}"`;
+      tctx.fillStyle=el.color||'#0b4a3b';tctx.textAlign=el.align||'center';tctx.textBaseline='middle';
+      drawWrapped(tctx,el.text||'',0,0,el.size||34,tmp.width*0.85);
+    }
+    tctx.restore();
+  });
+  tmp.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='sticker.png';a.click();URL.revokeObjectURL(a.href);},'image/png');
+};
+
+// GIF export (offline)
+function exportGIF(){
+  const dur=2000,fps=15,frames=Math.round(dur/(1000/fps)),framesData=[];
+  playing=true;animStart=performance.now();
+  let count=0;
+  const cap=()=>{
+    framesData.push(canvas.toDataURL('image/png'));
+    count++;
+    if(count<frames) setTimeout(cap,dur/frames);
+    else {
+      playing=false;
+      if(typeof GIF!=='undefined'){
+        const gif=new GIF({workers:2,quality:10,workerScript:'gif.worker.js'});
+        framesData.forEach(d=>{const img=new Image();img.src=d;gif.addFrame(img,{delay:1000/fps,copy:true});});
+        gif.on('finished',blob=>{
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');a.href=url;a.download='sticker.gif';a.click();URL.revokeObjectURL(url);
+        });
+        gif.render();
+      } else alert('GIF.js not loaded.');
+    }
+  };
+  cap();
+}
+document.getElementById('exportGif').onclick=exportGIF;
+
+// WebM export
+document.getElementById('exportMp4').onclick=()=>{
+  const dur=parseInt(prompt('Enter video duration (seconds)','2'))||2;
+  const fps=30;
+  const stream=canvas.captureStream(fps);
+  const rec=[];let mr;
+  try{mr=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});}
+  catch(e){mr=new MediaRecorder(stream);}
+  mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.push(e.data);};
+  mr.onstop=()=>{const blob=new Blob(rec,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sticker.webm';a.click();};
+  mr.start();playing=true;animStart=performance.now();
+  setTimeout(()=>{mr.stop();playing=false;},dur*1000);
+};
+
+// initial sample
+elements.push({id:uid(),type:'text',text:'اللہ پر بھروسہ رکھو، کامیابی خود راستہ بناتی ہے۔',font:'',size:30,color:'#0b4a3b',bold:false,align:'center',x:256,y:180,scale:1,jsAnim:'pop_in_out',jsDur:1200,delay:0,loop:1});
+elements.push({id:uid(),type:'text',text:'— ابو بکر صدیق',font:'',size:18,color:'#0b4a3b',bold:false,align:'center',x:256,y:440,scale:1,jsAnim:'breath',jsDur:1400,delay:100,loop:1});
+refreshList();
+</script>
+
+
+
+</body>
+</html>
