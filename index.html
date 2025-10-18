@@ -211,15 +211,15 @@ canvas {
   <div class="container">
     <div class="header">
       <div>
-        <div class="title">Sticker Maker Pro — Final Offline</div>
+        <div class="title">Sticker Maker Pro</div>
         <div class="subtitle">سرخی (Heading): <strong style="direction:ltr">Sticker Maker Pro</strong> — اردو عنوان نیچے دکھے گا</div>
       </div>
-      <div class="small">Offline • 50 JS animations • Text & Image • Export PNG / GIF / MP4(WebM)</div>
+      <div class="small"> • Text & Image • Export PNG / GIF / MP4(WebM)</div>
     </div>
 
     <div class="app">
       <div class="left">
-        <label style="font-size:15px;font-weight:700">سرخی — Heading (in Urdu)</label>
+        <label style="font-size:15px;font-weight:700">Heading (in Urdu)</label>
         <div class="small">یہ heading آپ تبدیل کر سکتے ہیں</div>
         <input id="urHeading" type="text" value="ابو بکر صدیق — اسلامی و موٹیویشنل اسٹیکرز" style="margin-top:8px">
 
@@ -347,7 +347,9 @@ canvas {
 
   <!-- PART 2: JavaScript (animations, resize, export) will go here -->
 
-<script src="gif.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+
 <script>
 // ===============================
 // Sticker Maker Pro — FINAL JS
@@ -609,44 +611,110 @@ document.getElementById('exportPng').onclick=()=>{
 };
 
 // GIF export (offline)
-function exportGIF(){
-  const dur=2000,fps=15,frames=Math.round(dur/(1000/fps)),framesData=[];
-  playing=true;animStart=performance.now();
-  let count=0;
-  const cap=()=>{
-    framesData.push(canvas.toDataURL('image/png'));
-    count++;
-    if(count<frames) setTimeout(cap,dur/frames);
-    else {
-      playing=false;
-      if(typeof GIF!=='undefined'){
-        const gif=new GIF({workers:2,quality:10,workerScript:'gif.worker.js'});
-        framesData.forEach(d=>{const img=new Image();img.src=d;gif.addFrame(img,{delay:1000/fps,copy:true});});
-        gif.on('finished',blob=>{
-          const url=URL.createObjectURL(blob);
-          const a=document.createElement('a');a.href=url;a.download='sticker.gif';a.click();URL.revokeObjectURL(url);
-        });
-        gif.render();
-      } else alert('GIF.js not loaded.');
-    }
-  };
-  cap();
-}
-document.getElementById('exportGif').onclick=exportGIF;
 
-// WebM export
-document.getElementById('exportMp4').onclick=()=>{
-  const dur=parseInt(prompt('Enter video duration (seconds)','2'))||2;
-  const fps=30;
-  const stream=canvas.captureStream(fps);
-  const rec=[];let mr;
-  try{mr=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});}
-  catch(e){mr=new MediaRecorder(stream);}
-  mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.push(e.data);};
-  mr.onstop=()=>{const blob=new Blob(rec,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sticker.webm';a.click();};
-  mr.start();playing=true;animStart=performance.now();
-  setTimeout(()=>{mr.stop();playing=false;},dur*1000);
-};
+
+
+
+// ========== UPDATED EXPORT CODE ==========
+
+// GIF Export (optimized + online compatible)
+// ========== UPDATED EXPORT CODE (FINAL) ==========
+
+// ✅ GIF Export (fixed frame capture)
+async function exportGIF(filename = 'sticker.gif') {
+  const fps = 15;
+  const dur = 2;
+  const totalFrames = dur * fps;
+
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: canvas.width,
+    height: canvas.height
+  });
+
+  gif.on('finished', blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  });
+
+  playing = true;
+  animStart = performance.now();
+
+  for (let i = 0; i < totalFrames; i++) {
+    drawFrame(performance.now()); // force redraw
+    gif.addFrame(ctx, { copy: true, delay: 1000 / fps });
+    await new Promise(r => setTimeout(r, 1000 / fps));
+  }
+
+  playing = false;
+  gif.render();
+}
+document.getElementById('exportGif').addEventListener('click', () => exportGIF());
+
+
+// ✅ MP4 Export (works only on HTTPS or localhost)
+document.getElementById('exportMp4').addEventListener('click', async () => {
+  const dur = parseInt(prompt('Enter video duration (seconds)', '2')) || 2;
+  const fps = 30;
+
+  const stream = canvas.captureStream(fps);
+  const rec = [];
+  let mr;
+  try {
+    mr = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+  } catch {
+    mr = new MediaRecorder(stream);
+  }
+
+  mr.ondataavailable = e => {
+    if (e.data && e.data.size) rec.push(e.data);
+  };
+
+  const stopPromise = new Promise(resolve => {
+    mr.onstop = () => resolve(new Blob(rec, { type: 'video/webm' }));
+  });
+
+  mr.start();
+  playing = true;
+  animStart = performance.now();
+  setTimeout(() => {
+    mr.stop();
+    playing = false;
+  }, dur * 1000);
+
+  const webmBlob = await stopPromise;
+  const webmArray = new Uint8Array(await webmBlob.arrayBuffer());
+
+  try {
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: false });
+    await ffmpeg.load();
+
+    ffmpeg.FS('writeFile', 'input.webm', webmArray);
+    await ffmpeg.run(
+      '-i', 'input.webm',
+      '-c:v', 'libx264',
+      '-crf', '23',
+      '-pix_fmt', 'yuv420p',
+      'output.mp4'
+    );
+
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const blob = new Blob([data.buffer], { type: 'video/mp4' });
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sticker.mp4';
+    a.click();
+
+  } catch (err) {
+    alert('⚠️ MP4 conversion failed. Run this file via HTTPS or localhost.');
+    console.error(err);
+  }
+});
 
 // initial sample
 elements.push({id:uid(),type:'text',text:'اللہ پر بھروسہ رکھو، کامیابی خود راستہ بناتی ہے۔',font:'',size:30,color:'#0b4a3b',bold:false,align:'center',x:256,y:180,scale:1,jsAnim:'pop_in_out',jsDur:1200,delay:0,loop:1});
