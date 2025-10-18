@@ -253,6 +253,7 @@ canvas {
           <button id="playBtn">Play</button>
           <button id="pauseBtn" class="btn-ghost">Pause</button>
           <button id="exportPng" style="min-width:120px">Export PNG</button>
+          <button id="exportWebP" class="btn-ghost">Export Animated WebP</button>
           <button id="exportGif" class="btn-ghost">Export GIF</button>
           <button id="exportMp4" style="min-width:120px">Export MP4 (WebM)</button>
         </div>
@@ -620,12 +621,67 @@ document.getElementById('exportPng').onclick=()=>{
 // GIF Export (optimized + online compatible)
 // ========== UPDATED EXPORT CODE (FINAL) ==========
 
-// ✅ GIF Export (fixed frame capture)
-async function exportGIF(filename = 'sticker.gif') {
+
+// ✅ Animated WebP Export (FFmpeg version — online/localhost required)
+document.getElementById('exportWebP').addEventListener('click', async () => {
   const fps = 15;
   const dur = 2;
   const totalFrames = dur * fps;
 
+  alert('⏳ Creating Animated WebP, please wait...');
+
+  // Step 1️⃣ — record short webm using MediaRecorder
+  const stream = canvas.captureStream(fps);
+  const chunks = [];
+  const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+
+  const done = new Promise(resolve => { rec.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' })); });
+  rec.start();
+  playing = true; animStart = performance.now();
+  setTimeout(() => { rec.stop(); playing = false; }, dur * 1000);
+  const webmBlob = await done;
+
+  // Step 2️⃣ — Convert webm → animated webp via FFmpeg
+  try {
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
+    await ffmpeg.load();
+
+    const webmData = await fetchFile(webmBlob);
+    ffmpeg.FS('writeFile', 'input.webm', webmData);
+
+    // 🔹 Convert to animated WebP
+    await ffmpeg.run(
+      '-i', 'input.webm',
+      '-vf', 'fps=15,scale=512:-1:flags=lanczos',
+      '-loop', '0',
+      'output.webp'
+    );
+
+    const out = ffmpeg.FS('readFile', 'output.webp');
+    const blob = new Blob([out.buffer], { type: 'image/webp' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sticker.webp';
+    a.click();
+    alert('✅ Animated WebP exported successfully!');
+  } catch (e) {
+    console.error(e);
+    alert('⚠️ FFmpeg conversion failed (works only on HTTPS or localhost).');
+  }
+});
+
+
+
+
+// ✅ GIF Export (fixed frame capture)
+async function exportGIF(filename = 'sticker.gif') {
+  const fps = 15;
+  const dur = 2; // total seconds
+  const totalFrames = dur * fps;
+
+  // create gif object
   const gif = new GIF({
     workers: 2,
     quality: 10,
@@ -633,6 +689,7 @@ async function exportGIF(filename = 'sticker.gif') {
     height: canvas.height
   });
 
+  // download callback
   gif.on('finished', blob => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -644,77 +701,92 @@ async function exportGIF(filename = 'sticker.gif') {
   animStart = performance.now();
 
   for (let i = 0; i < totalFrames; i++) {
-    drawFrame(performance.now()); // force redraw
-    gif.addFrame(ctx, { copy: true, delay: 1000 / fps });
+    // force re-render
+    drawFrame(performance.now());
+    // capture actual pixels from canvas
+    const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    gif.addFrame(frame, { delay: 1000 / fps });
+    // small delay between frames
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
 
   playing = false;
-  gif.render();
+  gif.render(); // start gif encoding
+  alert('✅ GIF rendering started... please wait a few seconds!');
 }
 document.getElementById('exportGif').addEventListener('click', () => exportGIF());
 
 
-// ✅ MP4 Export (works only on HTTPS or localhost)
+// ✅ Hybrid MP4/WebM Export (works offline & online both)
+// ✅ Lightweight Hybrid Export (Fast + Small File)
 document.getElementById('exportMp4').addEventListener('click', async () => {
-  const dur = parseInt(prompt('Enter video duration (seconds)', '2')) || 2;
-  const fps = 30;
+  const dur = parseFloat(prompt('Enter video duration (seconds)', '2')) || 2;
+  const fps = 20; // 🔹 Lower FPS = smaller file + faster export
 
   const stream = canvas.captureStream(fps);
-  const rec = [];
-  let mr;
+  const chunks = [];
+  let recorder;
+
   try {
-    mr = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+    recorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp8',
+      videoBitsPerSecond: 800000 // 🔹 ~0.8 Mbps — small but clear
+    });
   } catch {
-    mr = new MediaRecorder(stream);
+    recorder = new MediaRecorder(stream);
   }
 
-  mr.ondataavailable = e => {
-    if (e.data && e.data.size) rec.push(e.data);
-  };
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
 
   const stopPromise = new Promise(resolve => {
-    mr.onstop = () => resolve(new Blob(rec, { type: 'video/webm' }));
+    recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
   });
 
-  mr.start();
+  recorder.start();
   playing = true;
   animStart = performance.now();
+
   setTimeout(() => {
-    mr.stop();
+    recorder.stop();
     playing = false;
   }, dur * 1000);
 
   const webmBlob = await stopPromise;
-  const webmArray = new Uint8Array(await webmBlob.arrayBuffer());
 
+  // Try FFmpeg MP4 conversion only if online (fast fallback otherwise)
   try {
-    const { createFFmpeg, fetchFile } = FFmpeg;
+    const { createFFmpeg } = FFmpeg;
     const ffmpeg = createFFmpeg({ log: false });
     await ffmpeg.load();
 
-    ffmpeg.FS('writeFile', 'input.webm', webmArray);
+    const webmData = new Uint8Array(await webmBlob.arrayBuffer());
+    ffmpeg.FS('writeFile', 'input.webm', webmData);
+
     await ffmpeg.run(
       '-i', 'input.webm',
       '-c:v', 'libx264',
-      '-crf', '23',
+      '-preset', 'ultrafast', // ⚡ Faster encoding
+      '-crf', '28',           // 🔹 Smaller file size
       '-pix_fmt', 'yuv420p',
       'output.mp4'
     );
 
-    const data = ffmpeg.FS('readFile', 'output.mp4');
-    const blob = new Blob([data.buffer], { type: 'video/mp4' });
-
+    const mp4Data = ffmpeg.FS('readFile', 'output.mp4');
+    const mp4Blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(mp4Blob);
     a.download = 'sticker.mp4';
     a.click();
-
   } catch (err) {
-    alert('⚠️ MP4 conversion failed. Run this file via HTTPS or localhost.');
-    console.error(err);
+    console.warn('MP4 conversion failed — saving WebM instead.');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(webmBlob);
+    a.download = 'sticker.webm';
+    a.click();
+    alert('⚠️ Offline mode: saved as WebM (small file, fast export)');
   }
 });
+
 
 // initial sample
 elements.push({id:uid(),type:'text',text:'اللہ پر بھروسہ رکھو، کامیابی خود راستہ بناتی ہے۔',font:'',size:30,color:'#0b4a3b',bold:false,align:'center',x:256,y:180,scale:1,jsAnim:'pop_in_out',jsDur:1200,delay:0,loop:1});
